@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dom!</title>
+    <script src="https://unpkg.com/react@15.3.2/dist/react.js"></script>
+    <script src="https://unpkg.com/react-dom@15.3.2/dist/react-dom.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+    <style>
+        #container {
+            padding: 50px;
+            background-color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <script type="text/babel">
+        var Square = React.createClass({
+            render: function(){
+                var squareStyle = {
+                    height: 150,
+                    backgroundColor: this.props.color,
+                    WebkitFilter: "drop-shadow(0px 0px 5px #666)",
+                    filter: "drop-shadow(0px 0px 5px #666)"
+                };
+                return(
+                    <div style={squareStyle}></div>
+                );
+            }
+        });
+        var Card = React.createClass({
+            getInitialState: function(){
+                return {
+                    color: ''
+                }
+            },
+            componentDidMount: function(){
+                this._input.focus();
+            },
+            formHandler: function(e){
+                this.setState({
+                    color: this._input.value
+                });
+                this._input.value = '';
+                this._input.focus();
+                e.preventDefault();
+            },
+            render: function(){
+                var cardStyle = {
+                    height: 200,
+                    width: 150,
+                    padding: 0,
+                    backgroundColor: "#fff",
+                };
+                var formStyle = {
+                    padding: "10px 0"
+                };
+                var inputStyle = {
+                    width: 100,
+                    height:25
+                };
+                var buttonStyle = {
+                    width: 30,
+                    height: 30,
+                    marginLeft: 10,
+                    textAlign: "center"
+                };
+                return (
+                    <div style={cardStyle}>
+                        <Square color={this.state.color}></Square>
+                        <form style={formStyle} onSubmit={this.formHandler}>
+                            <input ref={(el) => this._input = el} type="text" value={this.props.color} style={inputStyle}/>
+                            <button style={buttonStyle}>Ok</button>
+                        </form>
+                    </div>
+                )
+            }
+        });
+        ReactDOM.render(
+            <Card/>
+            ,
+            document.querySelector('#container')
+        )
+    </script>
+</body>
+</html>
