@@ -31,7 +31,8 @@
         var Card = React.createClass({
             getInitialState: function(){
                 return {
-                    color: ''
+                    color: '',
+                    hover: false
                 }
             },
             componentDidMount: function(){
@@ -63,14 +64,24 @@
                     width: 30,
                     height: 30,
                     marginLeft: 10,
-                    textAlign: "center"
+                    textAlign: "center",
+                    border: "none",
+                    color: "white",
+                    fontWeight: "bold",
+                    cursor: "pointer"
                 };
+                if(!this.state.hover){
+                    buttonStyle['background'] = 'green';
+                }else{
+                    buttonStyle['background'] = 'olive';
+                }
+
                 return (
                     <div style={cardStyle}>
                         <Square color={this.state.color}></Square>
                         <form style={formStyle} onSubmit={this.formHandler}>
                             <input ref={(el) => this._input = el} type="text" value={this.props.color} style={inputStyle}/>
-                            <button style={buttonStyle}>Ok</button>
+                            <button style={buttonStyle} onMouseEnter={(el) => this.setState({hover: true})}  onMouseLeave={(el) => this.setState({hover: false})}>Go</button>
                         </form>
                     </div>
                 )
