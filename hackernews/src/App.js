@@ -5,8 +5,7 @@ const DEFAULT_QUERY = 'redux';
 const PATH_BASE     = 'https://hn.algolia.com/api/v1';
 const PATH_SEARCH   = '/search';
 const PARAM_SEARCH  = 'query=';
-
-const isSearched = searchTerm => item => item.title.toLowerCase().includes(searchTerm.toLowerCase());
+const PARAM_PAGE    = 'page=';
 
 class App extends Component {
   constructor(props) {
@@ -17,19 +16,24 @@ class App extends Component {
       searchTerm: DEFAULT_QUERY
     };
 
-    this.onDismiss        = this.onDismiss.bind(this);
-    this.onSearchChange   = this.onSearchChange.bind(this);
+    this.onDismiss           = this.onDismiss.bind(this);
+    this.onSearchChange      = this.onSearchChange.bind(this);
     this.setSearchTopStories = this.setSearchTopStories.bind(this);
+    this.onSearchSubmit      = this.onSearchSubmit.bind(this);
+    this.searchTerm         = this.searchTerm.bind(this);
 
   }
 
   componentDidMount() {
     const { searchTerm } = this.state;
+    this.searchTerm(searchTerm);
+  }
 
-    fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}`)
-    .then(response => response.json())
-    .then(result => this.setSearchTopStories(result))
-    .catch(error => error)
+  searchTerm(term, page = 0) {
+      fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${term}&${PARAM_PAGE}${page}`)
+      .then(response => response.json())
+      .then(result => this.setSearchTopStories(result))
+      .catch(error => error)
   }
 
   onDismiss(id) {
@@ -37,8 +41,24 @@ class App extends Component {
     this.setState({list: updatedList});
   }
 
+  onSearchSubmit(event) {
+      const { searchTerm } = this.state;
+      this.searchTerm(searchTerm);
+      event.preventDefault();
+  }
+
   setSearchTopStories(result) {
-    this.setState({ result });
+    const {hits, page} = result;
+    const oldHits = page !== 0 ? this.state.result.hits : [];
+
+    const updatedHits = [
+        ...oldHits,
+        ...hits
+    ];
+
+    this.setState({
+        result : {hits : updatedHits, page}
+    });
   }
 
   onSearchChange(event) {
@@ -49,43 +69,47 @@ class App extends Component {
 
   render() {
     const {result, searchTerm} = this.state;
-
-    if (!result) {
-      return null;
-    }
+    const page = (result && result.page) || 0;
 
     return (
       <div className="page">
         <div className="interactions">
-          <Search searchTerm={searchTerm} onSearchChange={this.onSearchChange}>Search</Search>
+          <Search searchTerm={searchTerm} onSearchChange={this.onSearchChange} onSearchSubmit={this.onSearchSubmit}>Search</Search>
         </div>
-        <Table list={result.hits} searchTerm={searchTerm} onDismiss={this.onDismiss} />
+        {result && <Table list={result.hits} searchTerm={searchTerm} onDismiss={this.onDismiss} />}
+        <div className="interactions">
+            <Button onClick={() => this.searchTerm(searchTerm, page + 1)}>More</Button>
+        </div>
       </div>
     );
   }
 }
 
-const Search = ({searchTerm, onSearchChange, children}) =>
-<form>
-  {children} <input type="text" onChange={onSearchChange} value={searchTerm} />
+const Search = ({searchTerm, onSearchChange, onSearchSubmit, children}) =>
+<form onSubmit={onSearchSubmit}>
+  <input type="text" onChange={onSearchChange} value={searchTerm} />
+  <button type="submit">{children}</button>
 </form>
 ;
 
-const Table = ({list, searchTerm, onDismiss}) =>
-  <div className="table">
-    {list.filter(isSearched(searchTerm)).map(item =>
-        <div key={item.objectID} className="table-row">
-          <span style={{width:'40%'}}><a href="{item.url}" title={item.title}>{item.title}</a></span>
-          <span style={{width:'30%'}}>{item.author}</span>
-          <span style={{width:'10%'}}>{item.num_comments}</span>
-          <span style={{width:'10%'}}>{item.points}</span>
-          <span style={{width:'10%'}}>
-            <Button onClick = {() => onDismiss(item.objectID)} className="button-inline">Dismiss</Button>
-          </span>
-        </div>
-    )}
-  </div>
-;
+const Table = ({list, searchTerm, onDismiss}) => {
+    console.log('render table');
+    return(
+<div className="table">
+  {list.map(item =>
+      <div key={item.objectID} className="table-row">
+        <span style={{width:'40%'}}><a href={item.url} title={item.title}>{item.title}</a></span>
+        <span style={{width:'30%'}}>{item.author}</span>
+        <span style={{width:'10%'}}>{item.num_comments}</span>
+        <span style={{width:'10%'}}>{item.points}</span>
+        <span style={{width:'10%'}}>
+          <Button onClick = {() => onDismiss(item.objectID)} className="button-inline">Dismiss</Button>
+        </span>
+      </div>
+  )}
+</div>
+);
+};
 
 const Button = ({onClick, className = '', children}) =>
   <button onClick={onClick} className={className} type="button">{children}</button>
